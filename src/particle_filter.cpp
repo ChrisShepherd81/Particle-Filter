@@ -14,7 +14,7 @@
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ParticleFilter::init(double x, double y, double theta, double std[]) {
   //Set the number of particles.
-  this->num_particles = 10000;
+  this->num_particles = 1000;
   this->particles.resize(this->num_particles);
   this->weights.resize(this->num_particles);
 
@@ -119,15 +119,15 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     auto transformed = observations;
     for(size_t j=0; j < transformed.size(); ++j)
     {
-      //Translation
-      double x_trans = x + transformed[j].x;
-      double y_trans = y + transformed[j].y;
-
       //Rotation
-      double cos_theta = std::cos(theta);
-      double sin_theta = std::sin(theta);
-      transformed[j].x = x_trans*cos_theta - y_trans*sin_theta;
-      transformed[j].y = x_trans*sin_theta + y_trans*cos_theta;
+     double cos_theta = std::cos(theta);
+     double sin_theta = std::sin(theta);
+     double x_rot = observations[j].x*cos_theta - observations[j].y*sin_theta;
+     double y_rot = observations[j].x*sin_theta + observations[j].y*cos_theta;
+
+      //Translation
+      transformed[j].x = x + x_rot;
+      transformed[j].y = y + y_rot;
 
       //Associate transformed observations to landmarks with nearest neighbor
       double min = sensor_range;
@@ -143,10 +143,11 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
 //      std::cout << "Distance: x: " << transformed[j].x - map_landmarks.landmark_list[transformed[j].id-1].x_f
 //          << " y: " << transformed[j].y - map_landmarks.landmark_list[transformed[j].id-1].y_f << std::endl;
+
       //Update weights.
       double x_val = std::pow(transformed[j].x - map_landmarks.landmark_list[transformed[j].id-1].x_f, 2)/(2*sig_x_sqr);
       double y_val = std::pow(transformed[j].y - map_landmarks.landmark_list[transformed[j].id-1].y_f, 2)/(2*sig_y_sqr);
-      double weight = gaussFactor*std::exp(-1.0*(x_val+y_val));
+      double weight = gaussFactor*std::exp(-(x_val+y_val));
       //std::cout << "Weight update " << weight << std::endl;
       if(weight > 0.0)
         this->particles[i].weight *= weight;
@@ -168,6 +169,19 @@ void ParticleFilter::resample() {
   size_t idx = uni_dist(generator);
 
   auto resampledParticles = this->particles;
+
+  //Calculate weight sum
+  double weight_sum = 0;
+  for(size_t i=0; i < this->num_particles; ++i)
+  {
+    weight_sum += particles[i].weight;
+  }
+
+  //Normalize weights
+  for(size_t i=0; i < this->num_particles; ++i)
+  {
+    particles[i].weight = particles[i].weight / weight_sum;
+  }
 
   //Find max weigth
   double maxWeight = 0;
@@ -191,9 +205,7 @@ void ParticleFilter::resample() {
       idx = (idx+1)%this->num_particles ;
     }
 
-  //  std::cout << "idx " << idx << std::endl;
-    resampledParticles[i] = particles[idx%this->num_particles];
-
+    resampledParticles[i] = particles[idx];
   }
 
   particles = resampledParticles;
