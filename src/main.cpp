@@ -15,8 +15,6 @@
 
 using namespace std;
 
-
-
 int main() {
 	
 	// parameters related to grading.
@@ -24,8 +22,6 @@ int main() {
 	double max_runtime = 45; // Max allowable runtime to pass [sec]
 	double max_translation_error = 1; // Max allowable translation error to pass [m]
 	double max_yaw_error = 0.05; // Max allowable yaw error [rad]
-
-
 
 	// Start timer.
 	int start = clock();
@@ -50,6 +46,7 @@ int main() {
 	normal_distribution<double> N_obs_x(0, sigma_landmark[0]);
 	normal_distribution<double> N_obs_y(0, sigma_landmark[1]);
 	double n_x, n_y, n_theta, n_range, n_heading;
+
 	// Read map data
 	Map map;
 	if (!read_map_data("data/map_data.txt", map)) {

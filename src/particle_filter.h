@@ -10,7 +10,7 @@
 #define PARTICLE_FILTER_H_
 
 #include "helper_functions.h"
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct Particle {
 
 	int id;
@@ -19,15 +19,11 @@ struct Particle {
 	double theta;
 	double weight;
 };
-
-
-
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class ParticleFilter {
 	
 	// Number of particles to draw
-	int num_particles; 
-	
-	
+	size_t num_particles;
 	
 	// Flag, if filter is initialized
 	bool is_initialized;
@@ -108,7 +104,5 @@ public:
 		return is_initialized;
 	}
 };
-
-
 
 #endif /* PARTICLE_FILTER_H_ */
