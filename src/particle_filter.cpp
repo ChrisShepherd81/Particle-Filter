@@ -11,11 +11,13 @@
 #include <numeric>
 
 #include "particle_filter.h"
+
+#define PRINT 0
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ParticleFilter::init(double x, double y, double theta, double std[])
 {
   //Set the number of particles.
-  this->num_particles = 1000;
+  this->num_particles = 100;
   this->particles.resize(this->num_particles);
 
   std::default_random_engine generator;
@@ -38,7 +40,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[])
   this->is_initialized = true;
 
 #if PRINT
-  printParticles();
+  printParticles("Init");
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,7 +87,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   }
 
 #if PRINT
-  printParticles();
+  printParticles("Prediction");
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -98,6 +100,20 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
   double gaussFactor = 1.0/(2*M_PI*std_landmark[0]*std_landmark[1]);
   double sig_x_sqr = std_landmark[0]*std_landmark[0];
   double sig_y_sqr = std_landmark[1]*std_landmark[1];
+
+#if 1 //PRINT
+  std::cout << "Gauss Factor: " << gaussFactor << std::endl;
+  std::cout << "(Sigma x)^2: " << sig_x_sqr << std::endl;
+  std::cout << "(Sigma y)^2: " << sig_y_sqr << std::endl;
+#endif
+
+  static size_t timestamp = 1;
+  std::cout << "Timestamp " << timestamp++ << std::endl;
+
+  for (size_t j=0; j < observations.size(); ++j)
+  {
+    std::cout << "Landmark " << j << "(" << observations[j].x << "," << observations[j].y << ")\n";
+  }
 
   for(size_t i=0; i < this->num_particles; ++i)
   {
@@ -133,12 +149,20 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
       double weight = gaussFactor*std::exp(-(x_val+y_val));
 
       if(weight > 0.0)
+      {
+        std::cout << "Weight is "  << weight << std::endl;
         this->particles[i].weight *= weight;
+        if(isnan(this->particles[i].weight))
+        {
+          std::cout << "FATAL weight is "  << weight;
+          exit(1);
+        }
+      }
     }
   }
 
-#if PRINT
-  printParticles();
+#if 1 //PRINT
+  printParticles("Update");
 #endif
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -156,13 +180,13 @@ void ParticleFilter::resample()
   double weight_sum = 0;
   for(size_t i=0; i < this->num_particles; ++i)
   {
-    weight_sum += particles[i].weight;
+   	weight_sum += particles[i].weight;
   }
 
   //Normalize weights
   for(size_t i=0; i < this->num_particles; ++i)
   {
-    particles[i].weight = particles[i].weight / weight_sum;
+   	particles[i].weight = particles[i].weight / weight_sum;
   }
 
   //Find max weigth
@@ -187,12 +211,14 @@ void ParticleFilter::resample()
     }
 
     resampledParticles[i] = particles[idx];
+    resampledParticles[i].id = i+1;
   }
 
   particles = resampledParticles;
+  write("../data/particles.txt");
 
-#if PRINT
-  printParticles();
+#if 1 //PRINT
+  printParticles("Resample");
 #endif
 
 }
@@ -207,16 +233,66 @@ void ParticleFilter::write(std::string filename) {
 	dataFile.close();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-void ParticleFilter::printParticles()
+void ParticleFilter::printParticles(std::string action)
 {
+  std::cout << action << ":\n";
   for(size_t i=0; i < this->num_particles; ++i)
   {
     std::cout << "[" << this->particles[i].id << "]"
         << " x: " << this->particles[i].x
         << " y: " << this->particles[i].y
+        << " theta: " << this->particles[i].theta
         << " w: " << this->particles[i].weight
         << std::endl;
   }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+Particle ParticleFilter::SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y)
+{
+  //particle: the particle to assign each listed association, and association's (x,y) world coordinates mapping to
+  // associations: The landmark id that goes along with each listed association
+  // sense_x: the associations x mapping already converted to world coordinates
+  // sense_y: the associations y mapping already converted to world coordinates
 
+  //Clear the previous associations
+  particle.associations.clear();
+  particle.sense_x.clear();
+  particle.sense_y.clear();
+
+  particle.associations= associations;
+  particle.sense_x = sense_x;
+  particle.sense_y = sense_y;
+
+  return particle;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+string ParticleFilter::getAssociations(Particle best)
+{
+  vector<int> v = best.associations;
+  stringstream ss;
+  copy( v.begin(), v.end(), ostream_iterator<int>(ss, " "));
+  string s = ss.str();
+  s = s.substr(0, s.length()-1);  // get rid of the trailing space
+  return s;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+string ParticleFilter::getSenseX(Particle best)
+{
+  vector<double> v = best.sense_x;
+  stringstream ss;
+  copy( v.begin(), v.end(), ostream_iterator<float>(ss, " "));
+  string s = ss.str();
+  s = s.substr(0, s.length()-1);  // get rid of the trailing space
+  return s;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+string ParticleFilter::getSenseY(Particle best)
+{
+  vector<double> v = best.sense_y;
+  stringstream ss;
+  copy( v.begin(), v.end(), ostream_iterator<float>(ss, " "));
+  string s = ss.str();
+  s = s.substr(0, s.length()-1);  // get rid of the trailing space
+  return s;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

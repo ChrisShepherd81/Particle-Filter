@@ -1,2 +1,5 @@
 /Debug/
 /build/
+/CMakeFiles/
+/.DS_Store
+/particle_filter

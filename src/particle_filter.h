@@ -10,14 +10,19 @@
 #define PARTICLE_FILTER_H_
 
 #include "helper_functions.h"
+
+using namespace std;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct Particle {
 
-	int id;
-	double x;
-	double y;
-	double theta;
-	double weight;
+  int id;
+  double x;
+  double y;
+  double theta;
+  double weight;
+  std::vector<int> associations;
+  std::vector<double> sense_x;
+  std::vector<double> sense_y;
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class ParticleFilter {
@@ -89,6 +94,16 @@ public:
 	 */
 	void write(std::string filename);
 	
+	/*
+   * Set a particles list of associations, along with the associations calculated world x,y coordinates
+   * This can be a very useful debugging tool to make sure transformations are correct and assocations correctly connected
+   */
+  Particle SetAssociations(Particle particle, std::vector<int> associations, std::vector<double> sense_x, std::vector<double> sense_y);
+
+  std::string getAssociations(Particle best);
+  std::string getSenseX(Particle best);
+	std::string getSenseY(Particle best);
+
 	/**
 	 * initialized Returns whether particle filter is initialized yet or not.
 	 */
@@ -96,7 +111,7 @@ public:
 		return is_initialized;
 	}
 
-	void printParticles();
+	void printParticles(std::string action);
 };
 
 #endif /* PARTICLE_FILTER_H_ */
