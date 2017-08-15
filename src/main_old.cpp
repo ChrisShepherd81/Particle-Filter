@@ -35,8 +35,8 @@ int main() {
 	 * if you used fused data from multiple sensors, it's difficult to find
 	 * these uncertainties directly.
 	 */
-	double sigma_pos [3] = {0.3, 0.3, 0.01}; // GPS measurement uncertainty [x [m], y [m], theta [rad]]
-	double sigma_landmark [2] = {0.3, 0.3}; // Landmark measurement uncertainty [x [m], y [m]]
+	double sigma_pos [3] = {0.6, 0.6, 0.01}; // GPS measurement uncertainty [x [m], y [m], theta [rad]]
+	double sigma_landmark [2] = {0.6, 0.6}; // Landmark measurement uncertainty [x [m], y [m]]
 
 	// noise generation
 	default_random_engine gen;

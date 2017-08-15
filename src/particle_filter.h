@@ -112,6 +112,7 @@ public:
 	}
 
 	void printParticles(std::string action);
+	void writeObservations(std::vector<LandmarkObs> observations);
 };
 
 #endif /* PARTICLE_FILTER_H_ */

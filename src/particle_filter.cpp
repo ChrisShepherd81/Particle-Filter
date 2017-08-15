@@ -51,8 +51,9 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
   std::normal_distribution<double> dist_y(0.0,std_pos[1]);
   std::normal_distribution<double> dist_theta(0.0,std_pos[2]);
 
+  double min_yaw_rate = 1e-6;
   double y_diff_yaw_rate, d_theta;
-  if(std::abs(yaw_rate) > 1e-6)
+  if(std::abs(yaw_rate) > min_yaw_rate)
   {
     y_diff_yaw_rate = velocity/yaw_rate;
     d_theta = delta_t*yaw_rate;
@@ -67,15 +68,15 @@ void ParticleFilter::prediction(double delta_t, double std_pos[], double velocit
     double theta = this->particles[i].theta;
     double new_x, new_y;
 
-    if(std::abs(yaw_rate) > 1e-6)
+    if(std::abs(yaw_rate) > min_yaw_rate)
     {
       new_x = this->particles[i].x + (y_diff_yaw_rate*((std::sin(theta+d_theta)-std::sin(theta))));
       new_y = this->particles[i].y + (y_diff_yaw_rate*((std::cos(theta)-std::cos(theta+d_theta))));
     }
     else
     {
-      new_x = this->particles[i].x + (velocity*(std::cos(theta)));
-      new_y = this->particles[i].y + (velocity*(std::sin(theta)));
+      new_x = this->particles[i].x + (delta_t*velocity*(std::cos(theta)));
+      new_y = this->particles[i].y + (delta_t*velocity*(std::sin(theta)));
     }
 
     double new_theta = theta+d_theta;
@@ -150,7 +151,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 
       if(weight > 0.0)
       {
+#if PRINT
         std::cout << "Weight is "  << weight << std::endl;
+#endif
         this->particles[i].weight *= weight;
         if(isnan(this->particles[i].weight))
         {
@@ -161,7 +164,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     }
   }
 
-#if 1 //PRINT
+#if PRINT
   printParticles("Update");
 #endif
 }
@@ -186,7 +189,10 @@ void ParticleFilter::resample()
   //Normalize weights
   for(size_t i=0; i < this->num_particles; ++i)
   {
-   	particles[i].weight = particles[i].weight / weight_sum;
+    if(weight_sum > 0)
+      particles[i].weight = particles[i].weight / weight_sum;
+    else
+      particles[i].weight = 1.0 / this->num_particles;
   }
 
   //Find max weigth
@@ -217,10 +223,23 @@ void ParticleFilter::resample()
   particles = resampledParticles;
   write("../data/particles.txt");
 
-#if 1 //PRINT
+#if PRINT
   printParticles("Resample");
 #endif
 
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+void ParticleFilter::writeObservations(std::vector<LandmarkObs> observations) {
+  // You don't need to modify this file.
+  std::ofstream dataFile;
+  dataFile.open("./data/data.txt", std::ios::app);
+  dataFile << "{";
+  for (size_t j=0; j < observations.size(); ++j)
+  {
+    dataFile << "(" << observations[j].x << "," << observations[j].y << ")";
+  }
+  dataFile << "}";
+  dataFile.close();
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 void ParticleFilter::write(std::string filename) {
